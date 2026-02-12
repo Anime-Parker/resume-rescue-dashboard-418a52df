@@ -19,6 +19,7 @@ const Workspace = ({ onAnalyze, isAnalyzing }: WorkspaceProps) => {
   const [jobDescription, setJobDescription] = useState("");
   const [fileName, setFileName] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDrop = (e: DragEvent) => {
@@ -36,6 +37,7 @@ const Workspace = ({ onAnalyze, isAnalyzing }: WorkspaceProps) => {
   const readFile = async (file: File) => {
     setFileName(file.name);
     if (file.name.toLowerCase().endsWith(".pdf")) {
+      setIsParsing(true);
       try {
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -49,6 +51,8 @@ const Workspace = ({ onAnalyze, isAnalyzing }: WorkspaceProps) => {
       } catch {
         setResumeText("");
         setFileName(null);
+      } finally {
+        setIsParsing(false);
       }
     } else {
       const reader = new FileReader();
@@ -91,7 +95,15 @@ const Workspace = ({ onAnalyze, isAnalyzing }: WorkspaceProps) => {
             className="hidden"
             onChange={handleFileSelect}
           />
-          {fileName ? (
+          {isParsing ? (
+            <div className="flex flex-col items-center gap-3 animate-scale-in">
+              <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center">
+                <Loader2 className="h-8 w-8 text-accent animate-spin" />
+              </div>
+              <p className="font-semibold text-foreground">Parsing PDF...</p>
+              <p className="text-sm text-muted-foreground">{fileName}</p>
+            </div>
+          ) : fileName ? (
             <div className="flex flex-col items-center gap-3 animate-scale-in">
               <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center">
                 <FileCheck className="h-8 w-8 text-accent" />
