@@ -4,13 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
 interface WorkspaceProps {
-  onAnalyze: () => void;
+  onAnalyze: (resumeText: string, jobDescription: string) => void;
   isAnalyzing: boolean;
 }
 
 const Workspace = ({ onAnalyze, isAnalyzing }: WorkspaceProps) => {
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [resumeText, setResumeText] = useState("");
   const [jobDescription, setJobDescription] = useState("");
+  const [fileName, setFileName] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -18,14 +19,22 @@ const Workspace = ({ onAnalyze, isAnalyzing }: WorkspaceProps) => {
     e.preventDefault();
     setDragOver(false);
     const file = e.dataTransfer.files[0];
-    if (file?.type === "application/pdf") {
-      setFileName(file.name);
-    }
+    if (file) readFile(file);
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) setFileName(file.name);
+    if (file) readFile(file);
+  };
+
+  const readFile = (file: File) => {
+    setFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      setResumeText(text);
+    };
+    reader.readAsText(file);
   };
 
   const handlePaste = async () => {
@@ -37,7 +46,7 @@ const Workspace = ({ onAnalyze, isAnalyzing }: WorkspaceProps) => {
     }
   };
 
-  const canAnalyze = fileName && jobDescription.trim().length > 0;
+  const canAnalyze = resumeText.trim().length > 0 && jobDescription.trim().length > 0;
 
   return (
     <section className="px-4 py-16 max-w-6xl mx-auto" id="workspace">
@@ -56,7 +65,7 @@ const Workspace = ({ onAnalyze, isAnalyzing }: WorkspaceProps) => {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".pdf"
+            accept=".txt,.pdf,.doc,.docx,.md"
             className="hidden"
             onChange={handleFileSelect}
           />
@@ -74,7 +83,7 @@ const Workspace = ({ onAnalyze, isAnalyzing }: WorkspaceProps) => {
                 <Upload className="h-8 w-8 text-muted-foreground" />
               </div>
               <p className="font-semibold text-foreground">Drag & Drop your Resume</p>
-              <p className="text-sm text-muted-foreground">or click to browse (PDF)</p>
+              <p className="text-sm text-muted-foreground">or click to browse (.txt, .md)</p>
             </div>
           )}
         </div>
@@ -107,7 +116,7 @@ const Workspace = ({ onAnalyze, isAnalyzing }: WorkspaceProps) => {
         <Button
           size="lg"
           disabled={!canAnalyze || isAnalyzing}
-          onClick={onAnalyze}
+          onClick={() => onAnalyze(resumeText, jobDescription)}
           className="gradient-cta text-accent-foreground font-bold text-base px-10 py-6 rounded-2xl shadow-glow hover:shadow-lg transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:shadow-none disabled:hover:scale-100 gap-2"
         >
           {isAnalyzing ? (
