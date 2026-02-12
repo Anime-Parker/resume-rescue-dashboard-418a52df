@@ -1,23 +1,46 @@
 import { useState } from "react";
 import HeroSection from "@/components/HeroSection";
 import Workspace from "@/components/Workspace";
-import ResultsDashboard from "@/components/ResultsDashboard";
+import ResultsDashboard, { AnalysisResult } from "@/components/ResultsDashboard";
 import SkeletonLoading from "@/components/SkeletonLoading";
 import { FileSearch } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
-type AnalysisState = "idle" | "loading" | "done";
+type AnalysisState = "idle" | "loading" | "done" | "error";
 
 const Index = () => {
   const [state, setState] = useState<AnalysisState>("idle");
-  const [score, setScore] = useState(0);
+  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const { toast } = useToast();
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async (resumeText: string, jobDescription: string) => {
     setState("loading");
-    // Simulate AI analysis
-    setTimeout(() => {
-      setScore(Math.floor(Math.random() * 40) + 55); // 55-94
+    try {
+      const { data, error } = await supabase.functions.invoke("analyze-resume", {
+        body: { resumeText, jobDescription },
+      });
+
+      if (error) {
+        throw new Error(error.message || "Analysis failed");
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      setResult(data as AnalysisResult);
       setState("done");
-    }, 3000);
+    } catch (e) {
+      console.error("Analysis error:", e);
+      setState("error");
+      toast({
+        title: "Analysis Failed",
+        description: e instanceof Error ? e.message : "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+      setState("idle");
+    }
   };
 
   return (
@@ -44,7 +67,7 @@ const Index = () => {
       <Workspace onAnalyze={handleAnalyze} isAnalyzing={state === "loading"} />
 
       {state === "loading" && <SkeletonLoading />}
-      {state === "done" && <ResultsDashboard score={score} />}
+      {state === "done" && result && <ResultsDashboard result={result} />}
 
       {/* Footer */}
       <footer className="border-t border-border py-8 text-center text-sm text-muted-foreground">
