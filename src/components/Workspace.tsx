@@ -1,5 +1,11 @@
 import { useState, useRef, DragEvent } from "react";
 import { Upload, Clipboard, FileCheck, Sparkles, Loader2 } from "lucide-react";
+import * as pdfjsLib from "pdfjs-dist";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.mjs",
+  import.meta.url
+).toString();
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -27,14 +33,30 @@ const Workspace = ({ onAnalyze, isAnalyzing }: WorkspaceProps) => {
     if (file) readFile(file);
   };
 
-  const readFile = (file: File) => {
+  const readFile = async (file: File) => {
     setFileName(file.name);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
-      setResumeText(text);
-    };
-    reader.readAsText(file);
+    if (file.name.toLowerCase().endsWith(".pdf")) {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const pages: string[] = [];
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          pages.push(content.items.map((item: any) => item.str).join(" "));
+        }
+        setResumeText(pages.join("\n"));
+      } catch {
+        setResumeText("");
+        setFileName(null);
+      }
+    } else {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setResumeText(e.target?.result as string);
+      };
+      reader.readAsText(file);
+    }
   };
 
   const handlePaste = async () => {
@@ -83,7 +105,7 @@ const Workspace = ({ onAnalyze, isAnalyzing }: WorkspaceProps) => {
                 <Upload className="h-8 w-8 text-muted-foreground" />
               </div>
               <p className="font-semibold text-foreground">Drag & Drop your Resume</p>
-              <p className="text-sm text-muted-foreground">or click to browse (.txt, .md)</p>
+              <p className="text-sm text-muted-foreground">or click to browse (.pdf, .txt, .md)</p>
             </div>
           )}
         </div>
