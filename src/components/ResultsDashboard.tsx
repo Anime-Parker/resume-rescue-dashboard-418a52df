@@ -107,7 +107,7 @@ const ResultsDashboard = ({ result }: ResultsDashboardProps) => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Interview Predictor */}
-        <div className="glass-card rounded-2xl p-6 flex flex-col">
+        <div className="glass-card rounded-2xl p-6 flex flex-col opacity-0 animate-fade-in-up-1">
           <div className="flex items-center gap-2 mb-4">
             <span className="text-xl">🔮</span>
             <h3 className="font-bold text-foreground text-sm">Predicted Interview Questions</h3>
@@ -125,7 +125,7 @@ const ResultsDashboard = ({ result }: ResultsDashboardProps) => {
         </div>
 
         {/* Smart-Connect Drafter */}
-        <div className="glass-card rounded-2xl p-6 flex flex-col">
+        <div className="glass-card rounded-2xl p-6 flex flex-col opacity-0 animate-fade-in-up-2">
           <div className="flex items-center gap-2 mb-4">
             <span className="text-xl">🤝</span>
             <h3 className="font-bold text-foreground text-sm">Recruiter Connection Note</h3>
@@ -148,7 +148,7 @@ const ResultsDashboard = ({ result }: ResultsDashboardProps) => {
         </div>
 
         {/* Elevator Pitch */}
-        <div className="glass-card rounded-2xl p-6 flex flex-col">
+        <div className="glass-card rounded-2xl p-6 flex flex-col opacity-0 animate-fade-in-up-3">
           <div className="flex items-center gap-2 mb-4">
             <span className="text-xl">🎤</span>
             <h3 className="font-bold text-foreground text-sm">Your 30-Second Pitch</h3>
