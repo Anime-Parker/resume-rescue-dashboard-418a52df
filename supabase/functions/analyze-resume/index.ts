@@ -21,9 +21,9 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const AI_SERVICE_API_KEY = Deno.env.get("AI_SERVICE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+      throw new Error("AI_SERVICE_API_KEY is not configured");
     }
 
     const systemPrompt = `You are an expert ATS (Applicant Tracking System) resume analyzer and career coach. Analyze the resume against the job description and return structured feedback using the provided tool/function call.
@@ -49,10 +49,10 @@ ${jobDescription}
 
 Evaluate keyword match, skills alignment, and overall fit. Provide a score from 0-100, list missing keywords, give actionable suggestions, and generate interview questions, a LinkedIn connection note, and an elevator pitch.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.example.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${AI_SERVICE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
