@@ -1,12 +1,18 @@
+import { useState } from "react";
 import ScoreGauge from "@/components/ScoreGauge";
-import { CheckCircle2, AlertTriangle, XCircle, Lightbulb } from "lucide-react";
+import { CheckCircle2, AlertTriangle, XCircle, Lightbulb, MessageSquare, Mic, Copy, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 export interface AnalysisResult {
   score: number;
   missingKeywords: string[];
   suggestions: string[];
   summary: string;
+  interviewQuestions?: string[];
+  connectionNote?: string;
+  elevatorPitch?: string;
 }
 
 interface ResultsDashboardProps {
@@ -22,6 +28,21 @@ const getStatusConfig = (score: number) => {
 const ResultsDashboard = ({ result }: ResultsDashboardProps) => {
   const status = getStatusConfig(result.score);
   const StatusIcon = status.icon;
+  const { toast } = useToast();
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async (text: string) => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    toast({ title: "Copied!", description: "Text copied to clipboard." });
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const interviewQuestions = result.interviewQuestions?.length
+    ? result.interviewQuestions
+    : ["Could not generate interview questions."];
+  const connectionNote = result.connectionNote || "Could not generate connection note.";
+  const elevatorPitch = result.elevatorPitch || "Could not generate elevator pitch.";
 
   return (
     <section className="px-4 py-16 max-w-5xl mx-auto animate-fade-in-up">
@@ -63,7 +84,7 @@ const ResultsDashboard = ({ result }: ResultsDashboardProps) => {
       </div>
 
       {/* Action Plan */}
-      <div className="glass-card rounded-2xl p-6">
+      <div className="glass-card rounded-2xl p-6 mb-10">
         <div className="flex items-center gap-2 mb-4">
           <Lightbulb className="h-5 w-5 text-accent" />
           <h3 className="font-bold text-foreground">Quick Fix Action Plan</h3>
@@ -78,6 +99,66 @@ const ResultsDashboard = ({ result }: ResultsDashboardProps) => {
             </li>
           ))}
         </ul>
+      </div>
+
+      {/* Career Toolkit */}
+      <h2 className="text-2xl sm:text-3xl font-bold text-center text-gradient mb-2">Career Toolkit</h2>
+      <p className="text-center text-muted-foreground mb-8">Your personalised tools for interview prep, networking, and branding.</p>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Interview Predictor */}
+        <div className="glass-card rounded-2xl p-6 flex flex-col">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-xl">🔮</span>
+            <h3 className="font-bold text-foreground text-sm">Predicted Interview Questions</h3>
+          </div>
+          <ul className="space-y-3 flex-1">
+            {interviewQuestions.map((q, i) => (
+              <li key={i} className="flex gap-3 text-sm text-muted-foreground">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
+                  {i + 1}
+                </span>
+                <span>{q}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Smart-Connect Drafter */}
+        <div className="glass-card rounded-2xl p-6 flex flex-col">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-xl">🤝</span>
+            <h3 className="font-bold text-foreground text-sm">Recruiter Connection Note</h3>
+          </div>
+          <div className="flex-1 flex flex-col">
+            <div className="bg-secondary/50 rounded-xl p-4 text-sm text-foreground leading-relaxed flex-1 flex items-center">
+              <MessageSquare className="h-4 w-4 text-muted-foreground mr-2 flex-shrink-0 self-start mt-0.5" />
+              <span>{connectionNote}</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3 self-end gap-1.5"
+              onClick={() => handleCopy(connectionNote)}
+            >
+              {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+              {copied ? "Copied" : "Copy"}
+            </Button>
+          </div>
+        </div>
+
+        {/* Elevator Pitch */}
+        <div className="glass-card rounded-2xl p-6 flex flex-col">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-xl">🎤</span>
+            <h3 className="font-bold text-foreground text-sm">Your 30-Second Pitch</h3>
+          </div>
+          <div className="flex-1 flex items-center">
+            <p className="text-base sm:text-lg font-medium text-foreground leading-relaxed tracking-wide">
+              {elevatorPitch}
+            </p>
+          </div>
+        </div>
       </div>
     </section>
   );

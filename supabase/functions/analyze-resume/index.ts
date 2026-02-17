@@ -26,9 +26,18 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `You are an expert ATS (Applicant Tracking System) resume analyzer. Analyze the resume against the job description and return structured feedback.
+    const systemPrompt = `You are an expert ATS (Applicant Tracking System) resume analyzer and career coach. Analyze the resume against the job description and return structured feedback using the provided tool/function call.
 
-You MUST respond using the provided tool/function call. Do not respond with plain text.`;
+You MUST respond using the provided tool/function call. Do not respond with plain text.
+
+For the interviewQuestions field: Analyze the GAP between the resume and job description. Generate 3 specific, tough technical questions the interviewer is likely to ask to test those missing or weak skills.
+
+For the connectionNote field: Write a professional, polite LinkedIn cold message under 300 characters. Mention the specific role title from the JD and highlight ONE key strength from the resume to sound authentic.
+
+For the elevatorPitch field: Write a 3-sentence "Tell Me About Yourself" script.
+- Sentence 1: Who they are (based on education/current role from resume).
+- Sentence 2: Their top skill relevant to this JD.
+- Sentence 3: Why they are excited about this specific company/role.`;
 
     const userPrompt = `Analyze this resume against the job description:
 
@@ -38,7 +47,7 @@ ${resumeText}
 JOB DESCRIPTION:
 ${jobDescription}
 
-Evaluate keyword match, skills alignment, and overall fit. Provide a score from 0-100, list missing keywords, and give actionable suggestions.`;
+Evaluate keyword match, skills alignment, and overall fit. Provide a score from 0-100, list missing keywords, give actionable suggestions, and generate interview questions, a LinkedIn connection note, and an elevator pitch.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -57,7 +66,7 @@ Evaluate keyword match, skills alignment, and overall fit. Provide a score from 
             type: "function",
             function: {
               name: "resume_analysis",
-              description: "Return structured resume analysis results",
+              description: "Return structured resume analysis results with career toolkit",
               parameters: {
                 type: "object",
                 properties: {
@@ -79,8 +88,21 @@ Evaluate keyword match, skills alignment, and overall fit. Provide a score from 
                     type: "string",
                     description: "A brief 1-2 sentence summary of the analysis",
                   },
+                  interviewQuestions: {
+                    type: "array",
+                    items: { type: "string" },
+                    description: "3 specific tough technical interview questions based on skill gaps between resume and JD",
+                  },
+                  connectionNote: {
+                    type: "string",
+                    description: "A professional LinkedIn cold message under 300 characters mentioning the role title and one key strength from the resume",
+                  },
+                  elevatorPitch: {
+                    type: "string",
+                    description: "A 3-sentence 'Tell Me About Yourself' script covering who they are, their top relevant skill, and excitement for the role",
+                  },
                 },
-                required: ["score", "missingKeywords", "suggestions", "summary"],
+                required: ["score", "missingKeywords", "suggestions", "summary", "interviewQuestions", "connectionNote", "elevatorPitch"],
                 additionalProperties: false,
               },
             },
@@ -116,6 +138,17 @@ Evaluate keyword match, skills alignment, and overall fit. Provide a score from 
     }
 
     const analysis = JSON.parse(toolCall.function.arguments);
+
+    // Fallbacks for new fields
+    if (!analysis.interviewQuestions || !Array.isArray(analysis.interviewQuestions) || analysis.interviewQuestions.length === 0) {
+      analysis.interviewQuestions = ["Could not generate interview questions. Please try again."];
+    }
+    if (!analysis.connectionNote || typeof analysis.connectionNote !== "string") {
+      analysis.connectionNote = "Could not generate connection note. Please try again.";
+    }
+    if (!analysis.elevatorPitch || typeof analysis.elevatorPitch !== "string") {
+      analysis.elevatorPitch = "Could not generate elevator pitch. Please try again.";
+    }
 
     return new Response(JSON.stringify(analysis), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
